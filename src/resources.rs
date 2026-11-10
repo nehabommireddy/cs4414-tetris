@@ -30,19 +30,26 @@ pub struct Resources {
     pub wall_kicks: WallKickTable,
 }
 
-fn load_json<T: DeserializeOwned>(path: &Path) -> Result<T, Box<dyn Error>> {
-    let contents = fs::read_to_string(path)?;
-    let data = serde_json::from_str::<T>(&contents)?;
-    Ok(data)
+fn load_json<T: DeserializeOwned>(
+    file_path: &Path,
+) -> Result<T, Box<dyn Error>> {
+    let file_contents = fs::read_to_string(file_path)?;
+    let parsed_data = serde_json::from_str(&file_contents)?;
+
+    Ok(parsed_data)
 }
 
 impl Resources {
-    pub fn load(dir: &Path) -> Result<Self, Box<dyn Error>> {
-        let config = load_json(&dir.join("config.json"))?;
-        let tetrominoes = load_json(&dir.join("tetrominoes.json"))?;
-        let wall_kicks = load_json(&dir.join("wall_kicks.json"))?;
+    pub fn load(resources_directory: &Path) -> Result<Self, Box<dyn Error>> {
+        let config_path = resources_directory.join("config.json");
+        let tetrominoes_path = resources_directory.join("tetrominoes.json");
+        let wall_kicks_path = resources_directory.join("wall_kicks.json");
 
-        Ok(Self {
+        let config = load_json(&config_path)?;
+        let tetrominoes = load_json(&tetrominoes_path)?;
+        let wall_kicks = load_json(&wall_kicks_path)?;
+
+        Ok(Resources {
             config,
             tetrominoes,
             wall_kicks,
