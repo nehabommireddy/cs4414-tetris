@@ -15,7 +15,7 @@ pub struct Config {
     pub random_seed: [u8; 16],
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct TetrominoData {
     pub states: [[[i32; 2]; 4]; 4],
     pub wall_kick: String,
