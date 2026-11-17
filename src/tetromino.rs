@@ -13,7 +13,15 @@ pub enum TetrominoShape {
 }
 
 impl TetrominoShape {
-    pub const ALL: [Self; 7] = [Self::I, Self::J, Self::L, Self::O, Self::S, Self::T, Self::Z];
+    pub const ALL: [Self; 7] = [
+        Self::I,
+        Self::J,
+        Self::L,
+        Self::O,
+        Self::S,
+        Self::T,
+        Self::Z,
+    ];
 
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -57,9 +65,24 @@ pub struct Tetromino {
 }
 
 impl Tetromino {
-    pub fn new(shape: TetrominoShape, row: i32, col: i32, resources: &Resources) -> Result<Self, String> {
-        let data = resources.tetrominoes.get(shape.as_str()).ok_or_else(|| format!("Missing data for {shape}"))?.clone();
-        Ok(Self {shape, row, col, rotation: 0, data})
+    pub fn new(
+        shape: TetrominoShape,
+        row: i32,
+        col: i32,
+        resources: &Resources,
+    ) -> Result<Self, String> {
+        let data = resources
+            .tetrominoes
+            .get(shape.as_str())
+            .ok_or_else(|| format!("Missing data for {shape}"))?
+            .clone();
+        Ok(Self {
+            shape,
+            row,
+            col,
+            rotation: 0,
+            data,
+        })
     }
 
     pub const fn shape(&self) -> TetrominoShape {

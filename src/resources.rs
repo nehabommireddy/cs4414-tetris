@@ -30,9 +30,7 @@ pub struct Resources {
     pub wall_kicks: WallKickTable,
 }
 
-fn load_json<T: DeserializeOwned>(
-    file_path: &Path,
-) -> Result<T, Box<dyn Error>> {
+fn load_json<T: DeserializeOwned>(file_path: &Path) -> Result<T, Box<dyn Error>> {
     let file_contents = fs::read_to_string(file_path)?;
     let parsed_data = serde_json::from_str(&file_contents)?;
 

@@ -1,4 +1,6 @@
 pub mod board;
+pub mod bot;
+pub mod bot_strategy;
 pub mod game;
 pub mod input;
 pub mod output;

@@ -14,8 +14,14 @@ impl Board {
             return Err("Dimensions must be greater than zero".to_owned());
         }
 
-        let storage_height = height.checked_add(1).ok_or_else(|| "Board height is too large".to_owned())?;
-        Ok(Self {width, height, cells: vec![vec![false; width]; storage_height]})
+        let storage_height = height
+            .checked_add(1)
+            .ok_or_else(|| "Board height is too large".to_owned())?;
+        Ok(Self {
+            width,
+            height,
+            cells: vec![vec![false; width]; storage_height],
+        })
     }
 
     pub const fn width(&self) -> usize {
@@ -59,15 +65,33 @@ impl Board {
         offset_piece(piece, d_col, d_row).is_some_and(|candidate| self.placeable(&candidate))
     }
 
-    pub fn try_rotate(&self, piece: &mut Tetromino, clockwise: bool, wall_kicks: &WallKickTable) -> Result<bool, String> {
+    pub fn try_rotate(
+        &self,
+        piece: &mut Tetromino,
+        clockwise: bool,
+        wall_kicks: &WallKickTable,
+    ) -> Result<bool, String> {
         let from = piece.rotation();
-        let to = if clockwise {(from + 1) % 4} else {(from + 3) % 4};
+        let to = if clockwise {
+            (from + 1) % 4
+        } else {
+            (from + 3) % 4
+        };
         let states = ["o", "r", "t", "l"];
-        let table = wall_kicks.get(piece.wall_kick()).ok_or_else(|| format!("Missing kick table for {}", piece.wall_kick()))?;
-        let from_kicks = table.get(states[from]).ok_or_else(|| format!("Missing kick state {}", states[from]))?;
-        let to_kicks = table.get(states[to]).ok_or_else(|| format!("Missing kick state {}", states[to]))?;
+        let table = wall_kicks
+            .get(piece.wall_kick())
+            .ok_or_else(|| format!("Missing kick table for {}", piece.wall_kick()))?;
+        let from_kicks = table
+            .get(states[from])
+            .ok_or_else(|| format!("Missing kick state {}", states[from]))?;
+        let to_kicks = table
+            .get(states[to])
+            .ok_or_else(|| format!("Missing kick state {}", states[to]))?;
         if from_kicks.len() != to_kicks.len() {
-            return Err(format!("Mismatched kick table lengths for {} rotation", piece.shape()));
+            return Err(format!(
+                "Mismatched kick table lengths for {} rotation",
+                piece.shape()
+            ));
         }
 
         for (&[from_x, from_y], &[to_x, to_y]) in from_kicks.iter().zip(to_kicks) {
@@ -91,7 +115,11 @@ impl Board {
     }
 
     pub fn is_top_out(&self, piece: &Tetromino) -> bool {
-        piece.cells().is_none_or(|cells| {cells.into_iter().any(|(_, row)| row >= 0 && row as usize > self.height)})
+        piece.cells().is_none_or(|cells| {
+            cells
+                .into_iter()
+                .any(|(_, row)| row >= 0 && row as usize > self.height)
+        })
     }
 
     pub fn lock_piece(&mut self, piece: &Tetromino) -> Result<(), String> {
@@ -102,7 +130,9 @@ impl Board {
             return Err("Cannot lock colliding tetromino".to_owned());
         }
 
-        let cells = piece.cells().ok_or_else(|| "Tetromino coordinates overflow".to_owned())?;
+        let cells = piece
+            .cells()
+            .ok_or_else(|| "Tetromino coordinates overflow".to_owned())?;
         if cells.iter().any(|&(col, row)| {
             col < 0 || col as usize >= self.width || row < 0 || row as usize >= self.cells.len()
         }) {
@@ -117,9 +147,11 @@ impl Board {
 
     pub fn clear_lines(&mut self) -> usize {
         let previous_height = self.cells.len();
-        self.cells.retain(|row| !row.iter().all(|&occupied| occupied));
+        self.cells
+            .retain(|row| !row.iter().all(|&occupied| occupied));
         let cleared = previous_height - self.cells.len();
-        self.cells.resize_with(self.height + 1, || vec![false; self.width]);
+        self.cells
+            .resize_with(self.height + 1, || vec![false; self.width]);
         cleared
     }
 

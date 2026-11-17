@@ -1,4 +1,5 @@
 use crate::board::Board;
+use crate::bot::{BoardState, CellState, TetrominoType};
 use crate::input::TetrisAction;
 use crate::randomizer::BagRandomizer;
 use crate::resources::Resources;
@@ -15,16 +16,26 @@ pub struct Game<'a> {
     /// Frames since the current piece was last moved down a row by gravity.
     frames_since_drop: u64,
     topped_out: bool,
+    lines_cleared: usize,
 }
 
 impl<'a> Game<'a> {
     pub fn new(resources: &'a Resources) -> Result<Self, String> {
         let config = &resources.config;
         let board = Board::new(config.width, config.height)?;
-        let randomizer = BagRandomizer::from_parts(TetrominoShape::ALL.into_iter(), config.random_seed);
+        let randomizer =
+            BagRandomizer::from_parts(TetrominoShape::ALL.into_iter(), config.random_seed);
         let current = Self::make_piece(*randomizer.cur(), resources)?;
 
-        Ok(Self { resources, board, randomizer, current, frames_since_drop: 0, topped_out: false })
+        Ok(Self {
+            resources,
+            board,
+            randomizer,
+            current,
+            frames_since_drop: 0,
+            topped_out: false,
+            lines_cleared: 0,
+        })
     }
 
     /// Builds a piece of the given shape at the spawn position, column (width - 1) / 2, row height.
@@ -50,7 +61,7 @@ impl<'a> Game<'a> {
             return Ok(());
         }
         self.board.lock_piece(&self.current)?;
-        self.board.clear_lines();
+        self.lines_cleared += self.board.clear_lines();
         self.spawn()
     }
 
@@ -72,10 +83,12 @@ impl<'a> Game<'a> {
                 self.board.try_move(&mut self.current, 1, 0);
             }
             TetrisAction::C => {
-                self.board.try_rotate(&mut self.current, true, &self.resources.wall_kicks)?;
+                self.board
+                    .try_rotate(&mut self.current, true, &self.resources.wall_kicks)?;
             }
             TetrisAction::W => {
-                self.board.try_rotate(&mut self.current, false, &self.resources.wall_kicks)?;
+                self.board
+                    .try_rotate(&mut self.current, false, &self.resources.wall_kicks)?;
             }
             TetrisAction::D => {
                 // Soft drop: gravity is lower for this frame only.
@@ -120,7 +133,45 @@ impl<'a> Game<'a> {
     /// The board as rows of filled/empty cells (top row first), with the falling piece drawn in.
     /// After a top out, the piece that topped out is not drawn and no new piece is spawned.
     pub fn render(&self) -> Vec<Vec<bool>> {
-        let piece = if self.topped_out { None } else { Some(&self.current) };
+        let piece = if self.topped_out {
+            None
+        } else {
+            Some(&self.current)
+        };
         self.board.render(piece, RENDER_ROWS)
+    }
+
+    pub fn lines_cleared(&self) -> usize {
+        self.lines_cleared
+    }
+
+    pub fn board_state(&self) -> BoardState {
+        let tetromino = match self.current.shape() {
+            TetrominoShape::I => TetrominoType::I,
+            TetrominoShape::J => TetrominoType::J,
+            TetrominoShape::L => TetrominoType::L,
+            TetrominoShape::O => TetrominoType::O,
+            TetrominoShape::S => TetrominoType::S,
+            TetrominoShape::T => TetrominoType::T,
+            TetrominoShape::Z => TetrominoType::Z,
+        };
+
+        let mut board = [[CellState::Empty; 10]; 20];
+
+        for row in 0..20 {
+            for col in 0..10 {
+                if self.board.is_full(col, row) == Some(true) {
+                    board[row][col] = CellState::Filled;
+                }
+            }
+        }
+
+        BoardState {
+            tetromino_row: self.current.row as usize,
+            tetromino_col: self.current.col as usize,
+            tetromino_rotation: self.current.rotation(),
+            tetromino,
+            board,
+        }
     }
 }
