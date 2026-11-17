@@ -21,7 +21,6 @@ struct SearchNode {
     actions: Vec<TetrisAction>,
 }
 
-// These are the exact states from tetrominoes.json.
 fn piece_cells(shape: TetrominoType, rotation: usize) -> [(i32, i32); 4] {
     let states = match shape {
         TetrominoType::I => [
@@ -251,11 +250,11 @@ fn evaluate_board(board: &Grid, cleared_lines: usize) -> f64 {
 
     let maximum_height = *heights.iter().max().unwrap_or(&0);
 
-    0.51 * total_height as f64
-        + 7.5 * holes as f64
-        + 0.35 * bumpiness as f64
-        + 0.8 * maximum_height as f64
-        - 4.0 * cleared_lines as f64
+    total_height as f64
+    + 10.0 * holes as f64
+    + bumpiness as f64
+    + 2.0 * maximum_height as f64
+    - 5.0 * cleared_lines as f64
 }
 
 pub fn find_best_actions(state: &BoardState) -> Vec<TetrisAction> {

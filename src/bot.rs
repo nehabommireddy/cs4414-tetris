@@ -117,19 +117,16 @@ impl GoodBot {
 
         let mut should_replan = self.planned_actions.is_empty();
 
-        // A different shape means a new piece.
         if self.previous_shape != Some(state.tetromino) {
             should_replan = true;
         }
 
-        // A newly spawned piece usually moves upward.
         if let Some((previous_row, _, _)) = self.previous_position {
             if state.tetromino_row > previous_row {
                 should_replan = true;
             }
         }
 
-        // Check whether the last movement actually happened.
         if let (Some(previous), Some(action)) = (self.previous_position, self.previous_action) {
             match action {
                 TetrisAction::L if position.1 == previous.1 => {
@@ -193,7 +190,6 @@ impl MultiPlayerBot for GoodBot {
     }
 }
 
-// Your existing Game::step expects input::TetrisAction.
 impl From<TetrisAction> for crate::input::TetrisAction {
     fn from(action: TetrisAction) -> Self {
         match action {
