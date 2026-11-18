@@ -13,6 +13,12 @@ pub struct Config {
     pub gravity_decrease: u64,
     pub lock_delay: u64,
     pub random_seed: [u8; 16],
+    #[serde(default = "default_garbage_queue_time")]
+    pub garbage_queue_time: usize,
+}
+
+fn default_garbage_queue_time() -> usize {
+    10
 }
 
 #[derive(Debug, Deserialize, Clone)]

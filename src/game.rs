@@ -8,6 +8,17 @@ use crate::tetromino::{Tetromino, TetrominoShape};
 /// Number of rows printed: the 20 visible rows plus 2 above for the spawn area.
 const RENDER_ROWS: usize = 22;
 
+/// Result of a single game tick. Used by the multiplayer driver to drive garbage flow.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TickOutcome {
+    /// Number of lines the player cleared on this tick.
+    pub lines_cleared: usize,
+    /// Whether the current piece locked on this tick (hard drop or lock delay expired).
+    pub locked: bool,
+    /// Whether the player topped out on this tick.
+    pub topped_out: bool,
+}
+
 pub struct Game<'a> {
     resources: &'a Resources,
     board: Board,
@@ -17,6 +28,10 @@ pub struct Game<'a> {
     frames_since_drop: u64,
     topped_out: bool,
     lines_cleared: usize,
+    /// Lines cleared during the most recent lock. Reset at the start of each step.
+    last_lines_cleared: usize,
+    /// Whether the current piece locked during the most recent step.
+    last_locked: bool,
 }
 
 impl<'a> Game<'a> {
@@ -35,6 +50,8 @@ impl<'a> Game<'a> {
             frames_since_drop: 0,
             topped_out: false,
             lines_cleared: 0,
+            last_lines_cleared: 0,
+            last_locked: false,
         })
     }
 
@@ -56,19 +73,35 @@ impl<'a> Game<'a> {
 
     /// Locks the current piece. Checks for top out before clearing lines, then spawns the next piece.
     fn lock(&mut self) -> Result<(), String> {
+        self.last_locked = true;
         if self.board.is_top_out(&self.current) {
             self.topped_out = true;
             return Ok(());
         }
         self.board.lock_piece(&self.current)?;
-        self.lines_cleared += self.board.clear_lines();
+        let cleared = self.board.clear_lines();
+        self.last_lines_cleared = cleared;
+        self.lines_cleared += cleared;
         self.spawn()
     }
 
     /// Advances the game by one frame using the given input.
     pub fn step(&mut self, action: TetrisAction) -> Result<(), String> {
+        self.step_with_outcome(action).map(|_| ())
+    }
+
+    /// Advances the game by one frame and returns what happened on this tick.
+    /// Multiplayer code uses the returned outcome to flow garbage and detect locks.
+    pub fn step_with_outcome(&mut self, action: TetrisAction) -> Result<TickOutcome, String> {
+        self.last_lines_cleared = 0;
+        self.last_locked = false;
+
         if self.topped_out {
-            return Ok(());
+            return Ok(TickOutcome {
+                lines_cleared: 0,
+                locked: false,
+                topped_out: true,
+            });
         }
 
         let config = &self.resources.config;
@@ -96,7 +129,8 @@ impl<'a> Game<'a> {
             }
             TetrisAction::H => {
                 while self.board.try_move(&mut self.current, 0, -1) {}
-                return self.lock();
+                self.lock()?;
+                return Ok(self.make_outcome());
             }
             TetrisAction::E => {}
         }
@@ -109,10 +143,34 @@ impl<'a> Game<'a> {
             && !self.board.moveable(&self.current, 0, -1)
         {
             // 4 and 5: lock, line clears and spawning happen inside lock().
-            return self.lock();
+            self.lock()?;
         }
 
-        Ok(())
+        Ok(self.make_outcome())
+    }
+
+    fn make_outcome(&self) -> TickOutcome {
+        TickOutcome {
+            lines_cleared: self.last_lines_cleared,
+            locked: self.last_locked,
+            topped_out: self.topped_out,
+        }
+    }
+
+    /// Mutable access to the board for the multiplayer driver (garbage application).
+    pub fn board_mut(&mut self) -> &mut Board {
+        &mut self.board
+    }
+
+    /// Read-only access to the board.
+    pub fn board(&self) -> &Board {
+        &self.board
+    }
+
+    /// Forces the game into the topped-out state. Called by the multiplayer driver when
+    /// garbage pushes the stack past row 20.
+    pub fn force_top_out(&mut self) {
+        self.topped_out = true;
     }
 
     /// Runs every action in order, stopping early if the player tops out.

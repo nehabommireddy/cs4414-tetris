@@ -155,6 +155,44 @@ impl Board {
         cleared
     }
 
+    /// Pushes `count` garbage rows onto the bottom of the board. Every garbage row shares the
+    /// same `hole_col`. Existing rows shift upward. Returns true if any filled cell now sits at
+    /// or above `self.height` (a garbage-induced top-out).
+    pub fn add_garbage(&mut self, count: usize, hole_col: usize) -> Result<bool, String> {
+        if count == 0 {
+            return Ok(false);
+        }
+        if hole_col >= self.width {
+            return Err(format!(
+                "Garbage hole column {hole_col} is outside board width {}",
+                self.width
+            ));
+        }
+
+        let mut garbage_row = vec![true; self.width];
+        garbage_row[hole_col] = false;
+        for _ in 0..count {
+            self.cells.insert(0, garbage_row.clone());
+        }
+        // Rows pushed past the storage height are dropped.
+        self.cells.truncate(self.height + 1);
+
+        Ok(self.stack_tops_out())
+    }
+
+    /// Returns true if any filled cell sits at or above row `self.height`.
+    pub fn stack_tops_out(&self) -> bool {
+        for (row, cells) in self.cells.iter().enumerate() {
+            if row < self.height {
+                continue;
+            }
+            if cells.iter().any(|&filled| filled) {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn render(&self, piece: Option<&Tetromino>, rows: usize) -> Vec<Vec<bool>> {
         let mut rendered = vec![vec![false; self.width]; rows];
         for (row, cells) in self.cells.iter().enumerate().take(rows) {
