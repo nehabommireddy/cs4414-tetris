@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use p5_tetris::bot_runner::{BotRunner, BOT_NAMES};
+use p5_tetris::bot_runner::{BOT_NAMES, BotRunner};
 use p5_tetris::game::Game;
 use p5_tetris::input::parse_inputs;
 use p5_tetris::multiplayer::Multiplayer;
@@ -102,22 +102,34 @@ fn run(args: Cli) -> Result<(), String> {
     }
 
     if args.trace_bot_run {
-        let named_args_present =args.p1.is_some() || args.p2.is_some() || args.o1.is_some() || args.o2.is_some();
+        let named_args_present =
+            args.p1.is_some() || args.p2.is_some() || args.o1.is_some() || args.o2.is_some();
         let (bot_name1, trace1, bot_name2, trace2) = if named_args_present {
             if !args.legacy_trace_args.is_empty() {
                 return Err("Do not combine trace options with rest".to_owned());
             }
             let (Some(bot_name1), Some(bot_name2), Some(trace1), Some(trace2)) = (
-                args.p1.as_deref(),args.p2.as_deref(),args.o1.as_deref(),args.o2.as_deref(),
+                args.p1.as_deref(),
+                args.p2.as_deref(),
+                args.o1.as_deref(),
+                args.o2.as_deref(),
             ) else {
-                return Err("requires --p1, --p2, --o1, --o2 ".to_owned(),);
+                return Err("requires --p1, --p2, --o1, --o2 ".to_owned());
             };
             (bot_name1, trace1, bot_name2, trace2)
         } else {
             if args.legacy_trace_args.len() != 4 {
-                return Err("requires --p1, --p2, --o1, and --o2 (or four legacy positional arguments)".to_owned(),);
+                return Err(
+                    "requires --p1, --p2, --o1, and --o2 (or four legacy positional arguments)"
+                        .to_owned(),
+                );
             }
-            (args.legacy_trace_args[0].as_str(),Path::new(&args.legacy_trace_args[1]),args.legacy_trace_args[2].as_str(),Path::new(&args.legacy_trace_args[3]),)
+            (
+                args.legacy_trace_args[0].as_str(),
+                Path::new(&args.legacy_trace_args[1]),
+                args.legacy_trace_args[2].as_str(),
+                Path::new(&args.legacy_trace_args[3]),
+            )
         };
 
         let mut runner = BotRunner::new(bot_name1, bot_name2)?;
