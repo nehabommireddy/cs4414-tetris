@@ -105,9 +105,7 @@ fn run(args: Cli) -> Result<(), String> {
         let named_args_present =args.p1.is_some() || args.p2.is_some() || args.o1.is_some() || args.o2.is_some();
         let (bot_name1, trace1, bot_name2, trace2) = if named_args_present {
             if !args.legacy_trace_args.is_empty() {
-                return Err(
-                    "Do not combine trace options with rest".to_owned(),
-                );
+                return Err("Do not combine trace options with rest".to_owned());
             }
             let (Some(bot_name1), Some(bot_name2), Some(trace1), Some(trace2)) = (
                 args.p1.as_deref(),args.p2.as_deref(),args.o1.as_deref(),args.o2.as_deref(),
