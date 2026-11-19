@@ -1,4 +1,4 @@
-use p5_tetris::bot::{GoodBot, SinglePlayerBot};
+use p5_tetris::bot::{Bot, MySinglePlayerBot};
 use p5_tetris::game::Game;
 use p5_tetris::resources::Resources;
 
@@ -6,12 +6,12 @@ use std::path::Path;
 use std::time::Instant;
 
 #[test]
-fn good_bot_clears_40_lines() {
+fn can_clear_40_lines() {
     let resources = Resources::load(Path::new("resources")).expect("Failed to load resources");
 
     let mut game = Game::new(&resources).expect("Failed to create game");
 
-    let mut bot = <GoodBot as SinglePlayerBot>::new();
+    let mut bot = MySinglePlayerBot::new();
 
     let start_time = Instant::now();
     let mut frames = 0;

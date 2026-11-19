@@ -1,8 +1,8 @@
-use p5_tetris::bot::{BoardState, Bot, CellState, GoodBot, MultiPlayerBot, TetrominoType};
+use p5_tetris::bot::{BoardState, Bot, CellState, MultiPlayerBot, TetrominoType};
 
-pub type MySinglePlayerBot = GoodBot;
-pub type MyMultiPlayerBot = GoodBot;
-pub type MyMultiplayerBot = MyMultiPlayerBot;
+pub type MySinglePlayerBot = p5_tetris::bot::MySinglePlayerBot;
+pub type MyMultiPlayerBot = p5_tetris::bot::MyMultiPlayerBot;
+pub type MyMultiplayerBot = p5_tetris::bot::MyMultiplayerBot;
 
 fn empty_state() -> BoardState {
     BoardState {
@@ -16,15 +16,15 @@ fn empty_state() -> BoardState {
 
 #[test]
 fn create_bot_and_get_any_action_test() {
-    let mut bot = <MySinglePlayerBot as Bot>::new();
-    let _action = Bot::get_move(&mut bot, &empty_state());
+    let mut bot = MySinglePlayerBot::new();
+    let _action = bot.get_move(&empty_state());
 }
 
 #[test]
 fn create_mut_bot_and_get_any_action_test() {
-    let mut bot = <MyMultiplayerBot as MultiPlayerBot>::new();
+    let mut bot = MyMultiplayerBot::new();
     let state = empty_state();
-    let _action = MultiPlayerBot::get_move(&mut bot, &state, &[], &state, &[]);
+    let _action = bot.get_move(&state, &[], &state, &[]);
 }
 
 #[test]

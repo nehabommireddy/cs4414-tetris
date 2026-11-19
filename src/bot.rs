@@ -190,6 +190,38 @@ impl MultiPlayerBot for GoodBot {
     }
 }
 
+pub struct MySinglePlayerBot(GoodBot);
+
+impl SinglePlayerBot for MySinglePlayerBot {
+    fn new() -> Self {
+        Self(<GoodBot as SinglePlayerBot>::new())
+    }
+
+    fn get_move(&mut self, state: &BoardState) -> TetrisAction {
+        SinglePlayerBot::get_move(&mut self.0, state)
+    }
+}
+
+pub struct MyMultiPlayerBot(GoodBot);
+
+impl MultiPlayerBot for MyMultiPlayerBot {
+    fn new() -> Self {
+        Self(<GoodBot as MultiPlayerBot>::new())
+    }
+
+    fn get_move(
+        &mut self,
+        p1_state: &BoardState,
+        p1_garbage: &[GarbageLine],
+        p2_state: &BoardState,
+        p2_garbage: &[GarbageLine],
+    ) -> TetrisAction {
+        MultiPlayerBot::get_move(&mut self.0, p1_state, p1_garbage, p2_state, p2_garbage)
+    }
+}
+
+pub type MyMultiplayerBot = MyMultiPlayerBot;
+
 impl From<TetrisAction> for crate::input::TetrisAction {
     fn from(action: TetrisAction) -> Self {
         match action {
